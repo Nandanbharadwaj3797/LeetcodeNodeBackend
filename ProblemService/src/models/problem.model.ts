@@ -1,5 +1,12 @@
 import mongoose, { Document } from "mongoose";
 
+export enum Difficulty {
+    EASY = "easy",
+    MEDIUM = "medium",
+    HARD = "hard"
+}
+
+
 
 export interface ITestcase {
     input: string;
@@ -8,8 +15,9 @@ export interface ITestcase {
 
 export interface IProblem extends Document {
     title: string;
+    slug: string;
     description: string;
-    difficulty: "easy" | "medium" | "hard";
+    difficulty: Difficulty;
     constraints: string;
     tags: string[];
     editorial?: string;
@@ -23,22 +31,21 @@ export interface IProblem extends Document {
 }
 
 
+
 const testSchema = new mongoose.Schema<ITestcase>(
     {
         input: {
             type: String,
-            required: [true, "Input is required"],
-            trim: true,
+            required: true,
+            trim: true
         },
         output: {
             type: String,
-            required: [true, "Output is required"],
-            trim: true,
-        },
+            required: true,
+            trim: true
+        }
     },
-    {
-        _id: false, // remove unnecessary _id for each testcase
-    }
+    { _id: false }
 );
 
 
@@ -46,102 +53,117 @@ const problemSchema = new mongoose.Schema<IProblem>(
     {
         title: {
             type: String,
-            required: [true, "Title is required"],
-            maxLength: [100, "Title must be less than 100 characters"],
+            required: true,
+            maxlength: 100,
             trim: true,
-            lowercase: true, // normalize for uniqueness
-        },
-        description: {
-            type: String,
-            required: [true, "Description is required"],
-            trim: true,
-        },
-        difficulty: {
-            type: String,
-            enum: {
-                values: ["easy", "medium", "hard"],
-                message: "Invalid difficulty level",
-            },
-            default: "easy",
-            required: [true, "Difficulty level is required"],
+            lowercase: true
         },
 
+        slug: {
+            type: String,
+            unique: true,
+            lowercase: true
+        },
+
+        description: {
+            type: String,
+            required: true,
+            trim: true
+        },
+
+        difficulty: {
+            type: String,
+            enum: Object.values(Difficulty),
+            default: Difficulty.EASY,
+            required: true
+        },
 
         constraints: {
             type: String,
-            required: [true, "Constraints are required"],
-            trim: true,
+            required: true,
+            trim: true
         },
 
         tags: {
             type: [String],
-            default: [],
+            default: []
         },
 
         editorial: {
             type: String,
-            trim: true,
             default: "",
+            trim: true
         },
 
         testcases: {
             type: [testSchema],
             validate: [
                 (val: ITestcase[]) => val.length > 0,
-                "At least one testcase is required",
-            ],
+                "At least one testcase is required"
+            ]
         },
+
 
         hiddenTestcases: {
             type: [testSchema],
             default: [],
+            select: false
         },
 
         starterCode: {
             type: Map,
             of: String,
-            default: {},
+            default: {}
         },
 
         timeLimit: {
             type: Number,
-            default: 1, // seconds
+            default: 1,
+            min: 0.5,
+            max: 10
         },
 
         memoryLimit: {
             type: Number,
-            default: 256, // MB
-        },
+            default: 256,
+            min: 64,
+            max: 1024
+        }
     },
     {
         timestamps: true,
-
         toJSON: {
-            transform: (_, record) => {
-                const mutableRecord = record as any;
-                delete mutableRecord.__v;
-                mutableRecord.id = String(mutableRecord._id);
-                delete mutableRecord._id;
-                return mutableRecord;
-            },
-        },
+            transform: (_, record: any) => {
+                record.id = record._id?.toString();
+                delete record._id;
+                delete record.__v;
+
+                // convert Map → object
+                if (record.starterCode instanceof Map) {
+                    record.starterCode = Object.fromEntries(record.starterCode);
+                }
+
+                return record;
+            }
+        }
     }
 );
 
+
+
+problemSchema.pre("save", function () {
+    if (this.isModified("title")) {
+        this.slug = this.title.replace(/\s+/g, "-").toLowerCase();
+    }
+});
 
 
 problemSchema.index(
     { title: 1 },
-    {
-        unique: true,
-        collation: { locale: "en", strength: 2 },
-    }
+    { unique: true, collation: { locale: "en", strength: 2 } }
 );
 
-
 problemSchema.index({ difficulty: 1 });
-
-
 problemSchema.index({ tags: 1 });
 
 problemSchema.index({
@@ -149,7 +171,6 @@ problemSchema.index({
     description: "text"
 });
 
-export const Problem = mongoose.model<IProblem>(
-    "Problem",
-    problemSchema
-);
+
+
+export const Problem = mongoose.model<IProblem>("Problem", problemSchema);

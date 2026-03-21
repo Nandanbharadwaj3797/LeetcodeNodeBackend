@@ -1,5 +1,5 @@
 import { CreateProblemDto, UpdateProblemDto } from "../validators/problem.validator";
-import { IProblem } from "../models/problem.model";
+import { Difficulty, IProblem } from "../models/problem.model";
 import { IProblemRepository } from "../repositories/problem.repository";
 import { BadRequestError, NotFoundError } from "../utils/errors/app.error";
 import { sanitizeMarkdown } from "../utils/markdown.sanitizer";
@@ -10,7 +10,7 @@ export interface IProblemService {
     getAllProblems(page: number, limit: number): Promise<{ problems: Partial<IProblem>[], total: number }>;
     updateProblem(id: string, updateData: UpdateProblemDto): Promise<IProblem | null>;
     deleteProblem(id: string): Promise<boolean>;
-    findByDifficulty(difficulty: "easy" | "medium" | "hard"): Promise<Partial<IProblem>[]>;
+    findByDifficulty(difficulty: Difficulty): Promise<Partial<IProblem>[]>;
     searchProblems(query: string): Promise<Partial<IProblem>[]>;
 }
 
@@ -154,7 +154,7 @@ export class ProblemService implements IProblemService {
 
 
     async findByDifficulty(
-        difficulty: "easy" | "medium" | "hard"
+        difficulty: Difficulty
     ): Promise<Partial<IProblem>[]> {
 
         const problems = await this.problemRepository.findByDifficulty(difficulty);

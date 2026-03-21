@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { Difficulty } from "../models/problem.model";
 
 
 
@@ -21,7 +22,7 @@ export const createProblemSchema = z.object({
         .trim()
         .min(1, "Description is required"),
 
-    difficulty: z.enum(["easy", "medium", "hard"]),
+    difficulty: z.nativeEnum(Difficulty),
 
     constraints: z
         .string()
@@ -69,7 +70,7 @@ export const updateProblemSchema = z.object({
 
     description: z.string().trim().min(1).optional(),
 
-    difficulty: z.enum(["easy", "medium", "hard"]).optional(),
+    difficulty: z.nativeEnum(Difficulty).optional(),
 
     constraints: z.string().trim().min(1).optional(),
 
@@ -100,7 +101,7 @@ export const updateProblemSchema = z.object({
 
 
 export const findByDifficultySchema = z.object({
-    difficulty: z.enum(["easy", "medium", "hard"]),
+    difficulty: z.nativeEnum(Difficulty),
 });
 
 export const searchSchema = z.object({

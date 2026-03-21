@@ -1,4 +1,4 @@
-import { IProblem, Problem } from "../models/problem.model";
+import { Difficulty, IProblem, Problem } from "../models/problem.model";
 
 export interface IProblemRepository {
     createProblem(problem: Partial<IProblem>): Promise<IProblem>;
@@ -9,7 +9,7 @@ export interface IProblemRepository {
     ): Promise<{ problems: IProblem[]; total: number }>;
     updateProblem(id: string, updateData: Partial<IProblem>): Promise<IProblem | null>;
     deleteProblem(id: string): Promise<boolean>;
-    findByDifficulty(difficulty: "easy" | "medium" | "hard"): Promise<IProblem[]>;
+    findByDifficulty(difficulty: Difficulty): Promise<IProblem[]>;
     searchProblems(query: string): Promise<IProblem[]>;
 }
 
@@ -79,7 +79,7 @@ export class ProblemRepository implements IProblemRepository {
     }
 
     async findByDifficulty(
-        difficulty: "easy" | "medium" | "hard"
+        difficulty: Difficulty
     ): Promise<IProblem[]> {
         try {
             return await Problem.find({ difficulty })
