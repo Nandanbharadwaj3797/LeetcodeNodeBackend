@@ -118,17 +118,18 @@ const problemSchema = new mongoose.Schema<IProblem>(
 
         toJSON: {
             transform: (_, record) => {
-                delete (record as any).__v;
-                record.id = record._id;
-                delete record._id;
-                return record;
+                const mutableRecord = record as any;
+                delete mutableRecord.__v;
+                mutableRecord.id = String(mutableRecord._id);
+                delete mutableRecord._id;
+                return mutableRecord;
             },
         },
     }
 );
 
 
-// Case-insensitive unique title
+
 problemSchema.index(
     { title: 1 },
     {
@@ -137,12 +138,16 @@ problemSchema.index(
     }
 );
 
-// Filter by difficulty
+
 problemSchema.index({ difficulty: 1 });
 
-// Filter by tags (important for search)
+
 problemSchema.index({ tags: 1 });
 
+problemSchema.index({
+    title: "text",
+    description: "text"
+});
 
 export const Problem = mongoose.model<IProblem>(
     "Problem",

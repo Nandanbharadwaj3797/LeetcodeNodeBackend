@@ -11,6 +11,15 @@ export const validateRequestBody = (schema: AnyZodObject) => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
 
+            if (req.body === undefined || req.body === null) {
+                logger.error("Request body is missing");
+                res.status(400).json({
+                    message: "Invalid request body. Send a JSON object and set Content-Type: application/json",
+                    success: false,
+                });
+                return;
+            }
+
             logger.info("Validating request body");
             await schema.parseAsync(req.body);
             logger.info("Request body is valid");
@@ -51,6 +60,28 @@ export const validateQueryParams = (schema: AnyZodObject) => {
                 error: error
             });
             
+        }
+    }
+}
+
+export const validateRequestQuery = validateQueryParams;
+
+/**
+ *
+ * @param schema - Zod schema to validate the request route params
+ * @returns - Middleware function to validate request params
+ */
+export const validateRequestParams = (schema: AnyZodObject) => {
+    return async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            await schema.parseAsync(req.params);
+            next();
+        } catch (error) {
+            res.status(400).json({
+                message: "Invalid route params",
+                success: false,
+                error: error
+            });
         }
     }
 }
